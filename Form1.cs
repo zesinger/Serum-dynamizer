@@ -54,21 +54,6 @@ namespace Serum_dynamizer
 
         private bool LoadNativeSerum()
         {
-            try
-            {
-                using (var stream = File.Open(_filePath, FileMode.Open))
-                {
-                    using (BinaryReader reader = new BinaryReader(stream))
-                    {
-
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                return false;
-            }
-            return true;
         }
 
         private void bDynamize_Click(object sender, EventArgs e)
