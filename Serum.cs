@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO.Compression;
 using System.Numerics;
 
 namespace Serum_dynamizer
@@ -77,13 +78,24 @@ namespace Serum_dynamizer
 
         public byte[] SpriteShapeMode; // byte[nS] is this sprite detected in shape mode?
 
+        private bool Crz_Uncompress(string sourcefilepath, string destdirectory)
+        {
+            ZipFile.ExtractToDirectory(sourcefilepath, destdirectory);
+            return true;
+        }
         public Serum(string filePath)
         {
             // Load the Serum file from the specified file path
             // Implement the loading logic here
+            string filepath = filePath;
+            if (Path.GetExtension(filePath).ToLower() == ".crz")
+            {
+                Crz_Uncompress(filePath, Path.GetDirectoryName(filePath));
+                filepath = Path.GetDirectoryName(filePath) + Path.GetFileNameWithoutExtension(filePath) + ".crom";
+            }
             try
             {
-                using (var stream = File.Open(filePath, FileMode.Open))
+                using (var stream = File.Open(filepath, FileMode.Open))
                 {
                     using (BinaryReader reader = new BinaryReader(stream))
                     {
