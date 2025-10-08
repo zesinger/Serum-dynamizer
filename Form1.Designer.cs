@@ -35,7 +35,7 @@
             label2 = new Label();
             tHomeoSerum = new TextBox();
             bDynamize = new Button();
-            textBox3 = new TextBox();
+            tLog = new TextBox();
             SuspendLayout();
             // 
             // tNativeSerum
@@ -99,25 +99,25 @@
             bDynamize.Name = "bDynamize";
             bDynamize.Size = new Size(213, 86);
             bDynamize.TabIndex = 6;
-            bDynamize.Text = "Dynamize!";
+            bDynamize.Text = "Shrink!";
             bDynamize.UseVisualStyleBackColor = true;
             bDynamize.Click += bDynamize_Click;
             // 
-            // textBox3
+            // tLog
             // 
-            textBox3.Location = new Point(494, 23);
-            textBox3.Multiline = true;
-            textBox3.Name = "textBox3";
-            textBox3.ReadOnly = true;
-            textBox3.Size = new Size(288, 214);
-            textBox3.TabIndex = 7;
+            tLog.Location = new Point(494, 23);
+            tLog.Multiline = true;
+            tLog.Name = "tLog";
+            tLog.ReadOnly = true;
+            tLog.Size = new Size(288, 214);
+            tLog.TabIndex = 7;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 258);
-            Controls.Add(textBox3);
+            Controls.Add(tLog);
             Controls.Add(bDynamize);
             Controls.Add(bHomeoSerum);
             Controls.Add(label2);
@@ -126,7 +126,7 @@
             Controls.Add(label1);
             Controls.Add(tNativeSerum);
             Name = "Form1";
-            Text = "Serum Dynamizer v1.0";
+            Text = "Serum Shrinker v1.0";
             ResumeLayout(false);
             PerformLayout();
         }
@@ -140,6 +140,6 @@
         private Label label2;
         private TextBox tHomeoSerum;
         private Button bDynamize;
-        private TextBox textBox3;
+        public TextBox tLog;
     }
 }

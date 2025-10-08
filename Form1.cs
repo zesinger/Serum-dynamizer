@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 
 namespace Serum_dynamizer
@@ -28,6 +29,7 @@ namespace Serum_dynamizer
                     {
                         // on obtient le chemin du fichier sélectionné
                         tNativeSerum.Text = _filePath = openFileDialog.FileName;
+                        tHomeoSerum.Text = Path.GetDirectoryName(_filePath);
                     }
                 }
             }
@@ -52,10 +54,6 @@ namespace Serum_dynamizer
             }
         }
 
-        private bool LoadNativeSerum()
-        {
-        }
-
         private void bDynamize_Click(object sender, EventArgs e)
         {
             if (tNativeSerum.Text == "" || tHomeoSerum.Text == "")
@@ -63,10 +61,33 @@ namespace Serum_dynamizer
                 MessageBox.Show("You must choose a native Serum file and a directory for the homeopathic Serum first!");
                 return;
             }
-            if (LoadNativeSerum())
+            Serum nativeserum = new Serum(_filePath, this);
+            if (nativeserum.nFrames > 0)
             {
-
+                USerum uSerum = new USerum(nativeserum, this);
+            }
+            else
+            {
+                MessageBox.Show("Error loading the native Serum file!");
             }
         }
+        public static string FormatSize(long sizeInBytes)
+        {
+            string[] units = { "o", "ko", "Mo", "Go", "To", "Po" };
+            double size = sizeInBytes;
+            int unitIndex = 0;
+
+            while (size >= 1024 && unitIndex < units.Length - 1)
+            {
+                size /= 1024;
+                unitIndex++;
+            }
+
+            // Affiche 2 chiffres après la virgule sauf pour les octets
+            return unitIndex == 0
+                ? $"{sizeInBytes} {units[unitIndex]}"
+                : $"{size.ToString("F2", CultureInfo.InvariantCulture)} {units[unitIndex]}";
+        }
+
     }
 }
