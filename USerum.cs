@@ -26,85 +26,44 @@
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     frm.tLog.AppendText(Environment.NewLine + "Writing " + Path.GetFileName(filepath) + Environment.NewLine);
+                    // 64 char: name of the Serum
                     BinaryExtensions.WriteArray<char>(writer, nS.name);
-                    writer.Write((UInt16)(nS.LengthHeader / sizeof(uint)));
-                    bool isNewFormat = (nS.LengthHeader >= 14 * sizeof(uint));
+                    UInt16 version= (UInt16)(nS.LengthHeader / sizeof(uint));
+                    // 1 ushort: version of the Serum (former length of header / 4)
+                    writer.Write(version);
+                    bool isNewFormat = (version >= 14);
+                    // 1 ushort: width of the frames
                     writer.Write((UInt16)nS.fWidth);
+                    // 1 ushort: height of the frames
                     writer.Write((UInt16)nS.fHeight);
                     if (isNewFormat)
                     {
+                        // if new format:
+                        // 1 ushort: width of the extra frames
                         writer.Write((UInt16)nS.fWidthX);
+                        // 1 ushort: height of the extra frames
                         writer.Write((UInt16)nS.fHeightX);
                     }
+                    // 1 ushort: number of frames
                     writer.Write((UInt16)nS.nFrames);
-                    UInt16 nxfrs = 0;
-                    UInt16[]? frmidXs = null;
-                    UInt16[]? frmXs = null;
-                    if (isNewFormat)
-                    {
-                        (nxfrs, frmidXs, frmXs) = ListActiveXFrames(nS.isExtraFrame, nS.cFramesX, nS.fWidthX, nS.fHeightX);
-                        frm.tLog.AppendText("Number of extra frames kept: " + nxfrs.ToString() + " out of: " + nS.nFrames.ToString() + Environment.NewLine);
-                        writer.Write(nxfrs);
-                    }
+                    // 1 ushort: number of colors in the original ROM
                     writer.Write((UInt16)nS.noColors);
+                    // if old format:
+                    // 1 ushort: number of colors in the colorized ROM
                     if (!isNewFormat) writer.Write((UInt16)nS.ncColors);
+                    // 1 ushort: number of comparision masks
                     writer.Write((UInt16)nS.nCompMasks);
+                    // 1 ushort: number of sprites
                     writer.Write((UInt16)nS.nSprites);
-                    ushort[]? XSprID = null;
-                    byte[]? XSprMsk = null;
-                    ushort[]? XSprCol = null;
-                    if (isNewFormat)
-                    {
-                        (ushort nXSpr, XSprID, XSprMsk, XSprCol) = ListActiveXSprites(nS.isExtraSprite, nS.SpriteMaskX, nS.SpriteColoredX, MAX_SPRITE_WIDTH, MAX_SPRITE_HEIGHT);
-                        frm.tLog.AppendText("Number of extra sprites kept: " + nXSpr.ToString() + " out of: " + nS.nSprites.ToString() + Environment.NewLine);
-                        writer.Write(nXSpr);
-                    }
-                    if (nS.LengthHeader >= 13 * sizeof(uint)) writer.Write((UInt16)nS.nBackgrounds);
-                    UInt16 nxBGs = 0;
-                    UInt16[]? BGidXs = null;
-                    UInt16[]? BGXs = null;
-                    UInt16 nBGM = 0, nBGXM;
-                    UInt16[]? BGMId = null, BGXMId = null;
-                    byte[]? BGMBuf = null, BGXMBuf = null;
-                    if (isNewFormat)
-                    {
-                        (nxBGs, BGidXs, BGXs) = ListActiveXFrames(nS.isExtraBackground, nS.BackgroundFramesX, nS.fWidthX, nS.fHeightX);
-                        frm.tLog.AppendText("Number of extra backgrounds kept: " + nxBGs.ToString() + " out of: " + nS.nBackgrounds.ToString() + Environment.NewLine);
-                        writer.Write(nxBGs);
-                        (nBGM, BGMId, BGMBuf) = PackBackgroundMasks(nS.BackgroundID, nS.BackgroundMask, nS.fWidth, nS.fHeight);
-                        (nBGXM, BGXMId, BGXMBuf) = PackBackgroundMasks(nS.BackgroundID, nS.BackgroundMaskX, nS.fWidthX, nS.fHeightX);
-                        writer.Write(nBGM);
-                        writer.Write(nBGXM);
-                    }
-
-                    if (nS.LengthHeader >= 20 * sizeof(uint)) writer.Write((byte)nS.is256x64);
-                    (UInt16 nmsk, UInt16 nmskx, UInt16[] pdmaskIDs, UInt16[] pdmaskIDXs, byte[] pdmasks, byte[] pdmaskXs, byte[] pdcolv1s, ushort[] pdcols, ushort[] pdcolXs) = ConvertDMasks(nS.nFrames, MAX_DYNA_SETS_PER_FRAMEN, nS.fWidth, nS.fHeight, nS.fWidthX, nS.fHeightX, nS.noColors, isNewFormat, nS.DynaMasks, nS.DynaMasksX, nS.v1Dyna4Cols, nS.Dyna4Cols, nS.Dyna4ColsX);
-                    writer.Write(nmsk);
-                    uint lenColRotBuf = 0, lenColRotBufX = 0;
-                    uint[]? colRotDef = null, colRotDefX = null;
-                    UInt16[]? colRotBuf = null, colRotBufX = null;
-                    if (isNewFormat)
-                    {
-                        writer.Write(nmskx);
-                        (lenColRotBuf, colRotDef, colRotBuf) = PackColorRotations(nS.ColorRotations);
-                        (lenColRotBufX, colRotDefX, colRotBufX) = PackColorRotations(nS.ColorRotationsX);
-                        writer.Write(lenColRotBuf);
-                        writer.Write(lenColRotBufX);
-                    }
-                    UInt16 nsmsk = 0, nsmskx = 0;
-                    UInt16[]? pdsmaskIDs = null, pdsmaskIDXs = null;
-                    byte[]? pdsmasks = null, pdsmaskXs = null;
-                    byte[]? pdscolv1s = null;
-                    ushort[]? pdscols = null, pdscolXs = null;
-                    if (nS.LengthHeader >= 18 * sizeof(uint))
-                    {
-                        (nsmsk, nsmskx, pdsmaskIDs, pdsmaskIDXs, pdsmasks, pdsmaskXs, pdscolv1s, pdscols, pdscolXs) = ConvertDMasks(nS.nSprites, MAX_DYNA_SETS_PER_SPRITE, MAX_SPRITE_WIDTH, MAX_SPRITE_HEIGHT, MAX_SPRITE_WIDTH, MAX_SPRITE_HEIGHT, nS.noColors, true, nS.DynaSpriteMasks, nS.DynaSpriteMasksX, new byte[0], nS.DynaSprite4Cols, nS.DynaSprite4ColsX);
-                        writer.Write(nsmsk);
-                        writer.Write(nsmskx);
-                    }
-
+                    // if versions >= 13 : 1 ushort: number of backgrounds
+                    if (version >= 13) writer.Write((UInt16)nS.nBackgrounds);
+                    // if versions >= 20 : 1 byte: is256x64
+                    if (version >= 20) writer.Write((byte)nS.is256x64);
+                    // nframes * 1 byte: hash code of each frame
                     BinaryExtensions.WriteArray(writer, nS.HashCode);
+                    // (nframes + 7)/8 * 1 byte: shape comparison mode of each frame (bit-compressed)
                     BinaryExtensions.WriteArray(writer, ConvertByteToBit(nS.ShapeCompMode));
+                    // ncompmasks * 1 ushort: IDs of the comparison masks for each frame
                     BinaryExtensions.WriteArray(writer, nS.CompMaskID);
                     BinaryExtensions.WriteArray(writer, ConvertByteToBit(nS.CompMasks));
                     if (!isNewFormat)
@@ -114,16 +73,23 @@
                     }
                     else
                     {
+                        (UInt16 nxfrs, UInt16[] frmidXs, UInt16[] frmXs) = ListActiveXFrames(nS.isExtraFrame, nS.cFramesX, nS.fWidthX, nS.fHeightX);
+                        frm.tLog.AppendText("Number of extra frames kept: " + nxfrs.ToString() + " out of: " + nS.nFrames.ToString() + Environment.NewLine);
+                        writer.Write(nxfrs);
                         BinaryExtensions.WriteArray(writer, nS.cFrames);
                         BinaryExtensions.WriteArray(writer, frmidXs!);
                         BinaryExtensions.WriteArray(writer, frmXs!);
                     }
                     // pdmaskIDs contains the IDs of the dynamic masks (0xFFFF for empty masks)
+                    (UInt16 nmsk, UInt16 nmskx, UInt16[] pdmaskIDs, UInt16[] pdmaskIDXs, byte[] pdmasks, byte[] pdmaskXs, byte[] pdcolv1s, ushort[] pdcols, ushort[] pdcolXs) = 
+                        ConvertDMasks(nS.nFrames, MAX_DYNA_SETS_PER_FRAMEN, nS.fWidth, nS.fHeight, nS.fWidthX, nS.fHeightX, nS.noColors, isNewFormat, nS.DynaMasks, nS.DynaMasksX, nS.v1Dyna4Cols, nS.Dyna4Cols, nS.Dyna4ColsX);
+                    writer.Write(nmsk);
                     BinaryExtensions.WriteArray(writer, pdmaskIDs);
                     BinaryExtensions.WriteArray(writer, pdmasks); // these mask buffers contain values, they can't be bit-compressed
                     if (!isNewFormat) BinaryExtensions.WriteArray(writer, pdcolv1s);
                     else
                     {
+                        writer.Write(nmskx);
                         BinaryExtensions.WriteArray(writer, pdmaskIDXs);
                         BinaryExtensions.WriteArray(writer, pdmaskXs);
                         BinaryExtensions.WriteArray(writer, pdcols);
@@ -133,6 +99,10 @@
                     if (!isNewFormat) BinaryExtensions.WriteArray(writer, nS.v1SpriteDescription);
                     else
                     {
+                        (ushort nXSpr, ushort[] XSprID, byte[] XSprMsk, ushort[] XSprCol) =
+                            ListActiveXSprites(nS.isExtraSprite, nS.SpriteMaskX, nS.SpriteColoredX, MAX_SPRITE_WIDTH, MAX_SPRITE_HEIGHT);
+                        frm.tLog.AppendText("Number of extra sprites kept: " + nXSpr.ToString() + " out of: " + nS.nSprites.ToString() + Environment.NewLine);
+                        writer.Write(nXSpr);
                         BinaryExtensions.WriteArray(writer, nS.SpriteOriginal);
                         BinaryExtensions.WriteArray(writer, nS.SpriteColored);
                         BinaryExtensions.WriteArray(writer, XSprID!);
@@ -147,6 +117,10 @@
                         }
                         else
                         {
+                            (uint lenColRotBuf, uint[] colRotDef, UInt16[] colRotBuf) = PackColorRotations(nS.ColorRotations);
+                            (uint lenColRotBufX, uint[] colRotDefX, UInt16[] colRotBufX) = PackColorRotations(nS.ColorRotationsX);
+                            writer.Write(lenColRotBuf);
+                            writer.Write(lenColRotBufX);
                             BinaryExtensions.WriteArray(writer, colRotDef!);
                             BinaryExtensions.WriteArray(writer, colRotBuf!);
                             BinaryExtensions.WriteArray(writer, colRotDefX!);
@@ -165,18 +139,27 @@
                                     BinaryExtensions.WriteArray(writer, nS.FrameSpriteBB);
                                     if (nS.LengthHeader >= 13 * sizeof(uint))
                                     {
+                                        BinaryExtensions.WriteArray(writer, nS.BackgroundID);
                                         if (!isNewFormat)
+                                        {
                                             BinaryExtensions.WriteArray(writer, nS.v1BackgroundFrames);
+                                            BinaryExtensions.WriteArray(writer, nS.v1BackgroundBB);
+                                        }
                                         else
                                         {
+                                            (UInt16 nxBGs, UInt16[] BGidXs, UInt16[] BGXs) = 
+                                                ListActiveXFrames(nS.isExtraBackground, nS.BackgroundFramesX, nS.fWidthX, nS.fHeightX);
+                                            frm.tLog.AppendText("Number of extra backgrounds kept: " + nxBGs.ToString() + " out of: " + nS.nBackgrounds.ToString() + Environment.NewLine);
+                                            writer.Write(nxBGs);
+                                            (UInt16 nBGM, UInt16[] BGMId, byte[] BGMBuf) = 
+                                                PackBackgroundMasks(nS.BackgroundID, nS.BackgroundMask, nS.fWidth, nS.fHeight);
+                                            (UInt16 nBGXM, UInt16[] BGXMId, byte[] BGXMBuf) = 
+                                                PackBackgroundMasks(nS.BackgroundID, nS.BackgroundMaskX, nS.fWidthX, nS.fHeightX);
+                                            writer.Write(nBGM);
+                                            writer.Write(nBGXM);
                                             BinaryExtensions.WriteArray(writer, nS.BackgroundFrames);
                                             BinaryExtensions.WriteArray(writer, BGidXs!);
                                             BinaryExtensions.WriteArray(writer, BGXs!);
-                                        }
-                                        BinaryExtensions.WriteArray(writer, nS.BackgroundID);
-                                        if (!isNewFormat) BinaryExtensions.WriteArray(writer, nS.v1BackgroundBB);
-                                        else
-                                        {
                                             BinaryExtensions.WriteArray(writer, BGMId!);
                                             BinaryExtensions.WriteArray(writer, BGMBuf!);
                                             BinaryExtensions.WriteArray(writer, BGXMId!);
@@ -190,6 +173,10 @@
                                             BinaryExtensions.WriteArray(writer, PackDynaShadows(pdmaskIDXs, nS.DynaShadowsColX));
                                             if (nS.LengthHeader >= 18 * sizeof(uint))
                                             {
+                                                (UInt16 nsmsk, UInt16 nsmskx, UInt16[] pdsmaskIDs, UInt16[] pdsmaskIDXs, byte[] pdsmasks, byte[] pdsmaskXs, byte[] pdscolv1s, ushort[] pdscols, ushort[] pdscolXs) =
+                                                    ConvertDMasks(nS.nSprites, MAX_DYNA_SETS_PER_SPRITE, MAX_SPRITE_WIDTH, MAX_SPRITE_HEIGHT, MAX_SPRITE_WIDTH, MAX_SPRITE_HEIGHT, nS.noColors, true, nS.DynaSpriteMasks, nS.DynaSpriteMasksX, new byte[0], nS.DynaSprite4Cols, nS.DynaSprite4ColsX);
+                                                writer.Write(nsmsk);
+                                                writer.Write(nsmskx);
                                                 BinaryExtensions.WriteArray(writer, pdsmaskIDs!);
                                                 BinaryExtensions.WriteArray(writer, pdsmasks!);
                                                 BinaryExtensions.WriteArray(writer, pdscols!);
