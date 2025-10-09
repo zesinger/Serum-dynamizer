@@ -58,9 +58,12 @@ namespace Serum_dynamizer
         {
             if (tNativeSerum.Text == "" || tHomeoSerum.Text == "")
             {
-                MessageBox.Show("You must choose a native Serum file and a directory for the homeopathic Serum first!");
+                MessageBox.Show("You must choose a native Serum file and a directory for the micro Serum first!");
                 return;
             }
+            bDynamize.Enabled = false;
+            bHomeoSerum.Enabled = false;
+            bNativeSerum.Enabled = false;
             Serum nativeserum = new Serum(_filePath, this);
             if (nativeserum.nFrames > 0)
             {
@@ -70,6 +73,9 @@ namespace Serum_dynamizer
             {
                 MessageBox.Show("Error loading the native Serum file!");
             }
+            bDynamize.Enabled = true;
+            bHomeoSerum.Enabled = true;
+            bNativeSerum.Enabled = true;
         }
         public static string FormatSize(long sizeInBytes)
         {

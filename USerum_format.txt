@@ -46,12 +46,11 @@
 		UINT16*		FrameXIDs;	// UINT16[nF] Extra Frame ID for each original frame in the following array, 65535 if no extra frame
 		UINT16*		cFramesX;	// UINT16[nFX*fWX*fHX] Colorized extra frames, if this frame has sprites, it is the colorized frame of the static scene, with no sprite
 	UINT16*     DynaMaskIDs; // UINT16[nF] Dynamic mask ID per frame (65535 if no dynamic mask for this frame)
-							 // if v>=14 2 values per frame: first is for DynaMasks/Dyna4Cols, second is for DynaMasksX/Dyna4ColsX
-							 // if v<14 1 value per frame: for DynaMasks/v1Dyna4Cols
 	UINT8*		DynaMasks;	// UINT8[nD*fW*fH] Mask for dynamic content for each frame.  The value (<MAX_DYNA_SETS_PER_FRAME) points to a sequence of 4/16 colors in Dyna4Cols. 255 means not a dynamic content.
 	if v<14
 		UINT8*		v1Dyna4Cols;	// UINT8[nDynaMasks*noC*16] noC colors per dynamic set
 	else
+		UINT16*     DynaMaskIDXs; // UINT16[nF] Dynamic mask ID per extra frame (65535 if no dynamic mask for this frame)
 		UINT8*		DynaMasksX;	// UINT8[nDX*fWX*fHX] Mask for dynamic content for each frame.  The value (<MAX_DYNA_SETS_PER_FRAME) points to a sequence of 4/16 colors in Dyna4Cols. 255 means not a dynamic content.
 		UINT16*		Dyna4Cols;	// UINT16[nD*noC*MAX_DYNA_SETS_PER_FRAMEN] noC colors per dynamic set
 		UINT16*		Dyna4ColsX;	// UINT16[nDX*noC*MAX_DYNA_SETS_PER_FRAMEN] noC colors per dynamic set
@@ -105,10 +104,10 @@
 																// 0b1 - left, 0b10 - top left, 0b100 - top, 0b1000 - top right, 0b10000 - right, 0b100000 - bottom right, 0b1000000 - bottom, 0b10000000 - bottom left
 							UINT16*		DynaShadowColorX;	// UINT16[nD * MAX_DYNA_SETS_PER_FRAMEN] Color of the dynamic content shadows for extra frames
 							if v>=18
-								UINT16*     DynaSpriteMaskIDs; // UINT16[nF] Dynamic mask ID per sprite (65535 if no dynamic mask for this frame)
-														 // 2 values per frame: first is for DynaMasks/Dyna4Cols, second is for DynaMasksX/Dyna4ColsX
+								UINT16*     DynaSpriteMaskIDs; // UINT16[nS] Dynamic mask ID per sprite (65535 if no dynamic mask for this frame)
 								UINT8*		DynaSpriteMasks;	// UINT8[nDS*fW*fH] Mask for dynamic content for each sprite.  The value (<MAX_DYNA_SETS_PER_FRAME) points to a sequence of 4/16 colors in DynaSprite4Cols. 255 means not a dynamic content.
 								UINT16*		DynaSprite4Cols;	// UINT16[nDS*noC*MAX_DYNA_SETS_PER_SPRITE] noC colors per dynamic set
+								UINT16*     DynaSpriteMaskIDs; // UINT16[nS] Dynamic mask ID per extra sprite (65535 if no dynamic mask for this frame)
 								UINT8*		DynaSpriteMasksX;	// UINT8[nDSX*fW*fH] Mask for dynamic content for each extra sprite.  The value (<MAX_DYNA_SETS_PER_FRAME) points to a sequence of 4/16 colors in DynaSprite4ColsX. 255 means not a dynamic content.
 								UINT16*		DynaSprite4ColsX;	// UINT16[nDSX*noC*MAX_DYNA_SETS_PER_SPRITE] noC colors per dynamic set
 								if v>=19

@@ -129,14 +129,14 @@ namespace Serum_dynamizer
                     frm.tLog.Text= "Loading " + Path.GetFileName(filepath) + Environment.NewLine;
                     using (BinaryReader reader = new BinaryReader(stream))
                     {
-                        frm.tLog.Text += "Size: " + Form1.FormatSize(stream.Length) + Environment.NewLine;
+                        frm.tLog.AppendText("Size: " + Form1.FormatSize(stream.Length) + Environment.NewLine);
                         // Read the header
                         name = reader.ReadChars(64);
-                        frm.tLog.Text += "  ROM name: " + new string(name).TrimEnd('\0') + Environment.NewLine;
+                        frm.tLog.AppendText("  ROM name: " + new string(name).TrimEnd('\0') + Environment.NewLine);
                         LengthHeader = reader.ReadUInt32();
                         bool isNewFormat = (LengthHeader >= 14 * sizeof(uint));
-                        if (!isNewFormat) frm.tLog.Text += "  Serum v1 file" + Environment.NewLine;
-                        else frm.tLog.Text += "  Serum v2 file" + Environment.NewLine;
+                        if (!isNewFormat) frm.tLog.AppendText("  Serum v1 file" + Environment.NewLine);
+                        else frm.tLog.AppendText("  Serum v2 file" + Environment.NewLine);
                         fWidth = reader.ReadUInt32();
                         fHeight = reader.ReadUInt32();
                         if (isNewFormat)
@@ -144,22 +144,22 @@ namespace Serum_dynamizer
                             fWidthX = reader.ReadUInt32();
                             fHeightX = reader.ReadUInt32();
                         }
-                        frm.tLog.Text += "  Frame low res size: " + fWidth + "x" + fHeight + Environment.NewLine;
-                        frm.tLog.Text += "  Frame high res size: " + fWidthX + "x" + fHeightX + Environment.NewLine;
+                        frm.tLog.AppendText("  Frame low res size: " + fWidth + "x" + fHeight + Environment.NewLine);
+                        frm.tLog.AppendText("  Frame high res size: " + fWidthX + "x" + fHeightX + Environment.NewLine);
                         nFrames = reader.ReadUInt32();
-                        frm.tLog.Text += "  Number of frames: " + nFrames + Environment.NewLine;
+                        frm.tLog.AppendText("  Number of frames: " + nFrames + Environment.NewLine);
                         noColors = reader.ReadUInt32();
-                        frm.tLog.Text += "  Number of ROM colors: " + noColors + Environment.NewLine;
+                        frm.tLog.AppendText("  Number of ROM colors: " + noColors + Environment.NewLine);
                         if (!isNewFormat) ncColors = reader.ReadUInt32();
                         nCompMasks = reader.ReadUInt32();
-                        frm.tLog.Text += "  Number of comparison masks: " + nCompMasks + Environment.NewLine;
+                        frm.tLog.AppendText("  Number of comparison masks: " + nCompMasks + Environment.NewLine);
                         if (!isNewFormat) nMovMasks = reader.ReadUInt32();
                         nSprites = reader.ReadUInt32();
-                        frm.tLog.Text += "  Number of sprites: " + nSprites + Environment.NewLine;
+                        frm.tLog.AppendText("  Number of sprites: " + nSprites + Environment.NewLine);
                         if (LengthHeader >= 13 * sizeof(uint)) nBackgrounds = reader.ReadUInt16();
-                        frm.tLog.Text += "  Number of backgrounds: " + nBackgrounds + Environment.NewLine;
+                        frm.tLog.AppendText("  Number of backgrounds: " + nBackgrounds + Environment.NewLine);
                         if (LengthHeader >= 20 * sizeof(uint)) is256x64 = reader.ReadInt32();
-                        if (is256x64 > 0) frm.tLog.Text += "  Original resolution is 256x64" + Environment.NewLine;
+                        if (is256x64 > 0) frm.tLog.AppendText("  Original resolution is 256x64" + Environment.NewLine);
                         // Allocate memory for arrays based on the read values
                         if (is256x64 == 1) CompMasks = new byte[nCompMasks * 256 * 64];
                         else CompMasks = new byte[nCompMasks * fWidth * fHeight];
@@ -311,14 +311,14 @@ namespace Serum_dynamizer
                                 }
                             }
                         }
-                        frm.tLog.Text += "File loaded." + Environment.NewLine;
+                        frm.tLog.AppendText("File loaded." + Environment.NewLine);
                     }
                 }
             }
             catch (Exception ex)
             {
                 nFrames = 0;
-                frm.tLog.Text += "Error loading file: " + ex.Message + Environment.NewLine;
+                frm.tLog.AppendText("Error loading file: " + ex.Message + Environment.NewLine);
             }
         }
     }

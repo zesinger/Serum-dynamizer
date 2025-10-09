@@ -80,9 +80,9 @@
             label2.AutoSize = true;
             label2.Location = new Point(12, 78);
             label2.Name = "label2";
-            label2.Size = new Size(303, 15);
+            label2.Size = new Size(248, 15);
             label2.TabIndex = 4;
-            label2.Text = "Choose the destination \"homeopathic Serum\" directory:";
+            label2.Text = "Choose the directory for the micro Serum file:";
             // 
             // tHomeoSerum
             // 
@@ -95,7 +95,7 @@
             // bDynamize
             // 
             bDynamize.Font = new Font("Segoe UI", 27.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            bDynamize.Location = new Point(130, 145);
+            bDynamize.Location = new Point(146, 262);
             bDynamize.Name = "bDynamize";
             bDynamize.Size = new Size(213, 86);
             bDynamize.TabIndex = 6;
@@ -109,14 +109,15 @@
             tLog.Multiline = true;
             tLog.Name = "tLog";
             tLog.ReadOnly = true;
-            tLog.Size = new Size(288, 214);
+            tLog.ScrollBars = ScrollBars.Vertical;
+            tLog.Size = new Size(288, 450);
             tLog.TabIndex = 7;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 258);
+            ClientSize = new Size(800, 485);
             Controls.Add(tLog);
             Controls.Add(bDynamize);
             Controls.Add(bHomeoSerum);

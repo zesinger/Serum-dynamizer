@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
-namespace Serum_dynamizer
+﻿namespace Serum_dynamizer
 {
     internal class USerum
     {
@@ -34,7 +25,7 @@ namespace Serum_dynamizer
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    frm.tLog.Text += Environment.NewLine + "Writing " + Path.GetFileName(filepath) + Environment.NewLine;
+                    frm.tLog.AppendText(Environment.NewLine + "Writing " + Path.GetFileName(filepath) + Environment.NewLine);
                     BinaryExtensions.WriteArray<char>(writer, nS.name);
                     writer.Write((UInt16)(nS.LengthHeader / sizeof(uint)));
                     bool isNewFormat = (nS.LengthHeader >= 14 * sizeof(uint));
@@ -52,8 +43,9 @@ namespace Serum_dynamizer
                     if (isNewFormat)
                     {
                         (nxfrs, frmidXs, frmXs) = ListActiveXFrames(nS.isExtraFrame, nS.cFramesX, nS.fWidthX, nS.fHeightX);
+                        frm.tLog.AppendText("Number of extra frames kept: " + nxfrs.ToString() + " out of: " + nS.nFrames.ToString() + Environment.NewLine);
+                        writer.Write(nxfrs);
                     }
-                    writer.Write(nxfrs);
                     writer.Write((UInt16)nS.noColors);
                     if (!isNewFormat) writer.Write((UInt16)nS.ncColors);
                     writer.Write((UInt16)nS.nCompMasks);
@@ -64,6 +56,7 @@ namespace Serum_dynamizer
                     if (isNewFormat)
                     {
                         (ushort nXSpr, XSprID, XSprMsk, XSprCol) = ListActiveXSprites(nS.isExtraSprite, nS.SpriteMaskX, nS.SpriteColoredX, MAX_SPRITE_WIDTH, MAX_SPRITE_HEIGHT);
+                        frm.tLog.AppendText("Number of extra sprites kept: " + nXSpr.ToString() + " out of: " + nS.nSprites.ToString() + Environment.NewLine);
                         writer.Write(nXSpr);
                     }
                     if (nS.LengthHeader >= 13 * sizeof(uint)) writer.Write((UInt16)nS.nBackgrounds);
@@ -76,6 +69,7 @@ namespace Serum_dynamizer
                     if (isNewFormat)
                     {
                         (nxBGs, BGidXs, BGXs) = ListActiveXFrames(nS.isExtraBackground, nS.BackgroundFramesX, nS.fWidthX, nS.fHeightX);
+                        frm.tLog.AppendText("Number of extra backgrounds kept: " + nxBGs.ToString() + " out of: " + nS.nBackgrounds.ToString() + Environment.NewLine);
                         writer.Write(nxBGs);
                         (nBGM, BGMId, BGMBuf) = PackBackgroundMasks(nS.BackgroundID, nS.BackgroundMask, nS.fWidth, nS.fHeight);
                         (nBGXM, BGXMId, BGXMBuf) = PackBackgroundMasks(nS.BackgroundID, nS.BackgroundMaskX, nS.fWidthX, nS.fHeightX);
@@ -84,7 +78,7 @@ namespace Serum_dynamizer
                     }
 
                     if (nS.LengthHeader >= 20 * sizeof(uint)) writer.Write((byte)nS.is256x64);
-                    (UInt16 nmsk, UInt16 nmskx, UInt16[] pdmaskIDs, byte[] pdmasks, byte[] pdmaskXs, byte[] pdcolv1s, ushort[] pdcols, ushort[] pdcolXs) = ConvertDMasks(nS.fWidth, nS.fHeight, nS.fWidthX, nS.fHeightX, nS.noColors, isNewFormat, nS.DynaMasks, nS.DynaMasksX, nS.v1Dyna4Cols, nS.Dyna4Cols, nS.Dyna4ColsX);
+                    (UInt16 nmsk, UInt16 nmskx, UInt16[] pdmaskIDs, UInt16[] pdmaskIDXs, byte[] pdmasks, byte[] pdmaskXs, byte[] pdcolv1s, ushort[] pdcols, ushort[] pdcolXs) = ConvertDMasks(nS.nFrames, MAX_DYNA_SETS_PER_FRAMEN, nS.fWidth, nS.fHeight, nS.fWidthX, nS.fHeightX, nS.noColors, isNewFormat, nS.DynaMasks, nS.DynaMasksX, nS.v1Dyna4Cols, nS.Dyna4Cols, nS.Dyna4ColsX);
                     writer.Write(nmsk);
                     uint lenColRotBuf = 0, lenColRotBufX = 0;
                     uint[]? colRotDef = null, colRotDefX = null;
@@ -97,14 +91,14 @@ namespace Serum_dynamizer
                         writer.Write(lenColRotBuf);
                         writer.Write(lenColRotBufX);
                     }
-                    UInt16 nsmsk=0, nsmskx=0;
-                    UInt16[]? pdsmaskIDs = null;
+                    UInt16 nsmsk = 0, nsmskx = 0;
+                    UInt16[]? pdsmaskIDs = null, pdsmaskIDXs = null;
                     byte[]? pdsmasks = null, pdsmaskXs = null;
                     byte[]? pdscolv1s = null;
                     ushort[]? pdscols = null, pdscolXs = null;
                     if (nS.LengthHeader >= 18 * sizeof(uint))
                     {
-                        (nsmsk, nsmskx, pdsmaskIDs, pdsmasks, pdsmaskXs, pdscolv1s, pdscols, pdscolXs) = ConvertDMasks(MAX_SPRITE_WIDTH, MAX_SPRITE_HEIGHT, MAX_SPRITE_WIDTH, MAX_SPRITE_HEIGHT, nS.noColors, true, nS.DynaSpriteMasks, nS.DynaSpriteMasksX, new byte[0], nS.DynaSprite4Cols, nS.DynaSprite4ColsX);
+                        (nsmsk, nsmskx, pdsmaskIDs, pdsmaskIDXs, pdsmasks, pdsmaskXs, pdscolv1s, pdscols, pdscolXs) = ConvertDMasks(nS.nSprites, MAX_DYNA_SETS_PER_SPRITE, MAX_SPRITE_WIDTH, MAX_SPRITE_HEIGHT, MAX_SPRITE_WIDTH, MAX_SPRITE_HEIGHT, nS.noColors, true, nS.DynaSpriteMasks, nS.DynaSpriteMasksX, new byte[0], nS.DynaSprite4Cols, nS.DynaSprite4ColsX);
                         writer.Write(nsmsk);
                         writer.Write(nsmskx);
                     }
@@ -125,14 +119,12 @@ namespace Serum_dynamizer
                         BinaryExtensions.WriteArray(writer, frmXs!);
                     }
                     // pdmaskIDs contains the IDs of the dynamic masks (0xFFFF for empty masks)
-                    // for Serum v2, 2 UInt16 per frame: first is the ID of the dynamic mask for low res
-                    // second is the ID of the dynamic mask for high res
-                    // for Serum v1, 1 UInt16 per frame: ID of the dynamic mask v1 for low res
                     BinaryExtensions.WriteArray(writer, pdmaskIDs);
                     BinaryExtensions.WriteArray(writer, pdmasks); // these mask buffers contain values, they can't be bit-compressed
                     if (!isNewFormat) BinaryExtensions.WriteArray(writer, pdcolv1s);
                     else
                     {
+                        BinaryExtensions.WriteArray(writer, pdmaskIDXs);
                         BinaryExtensions.WriteArray(writer, pdmaskXs);
                         BinaryExtensions.WriteArray(writer, pdcols);
                         BinaryExtensions.WriteArray(writer, pdcolXs);
@@ -194,13 +186,14 @@ namespace Serum_dynamizer
                                         {
                                             BinaryExtensions.WriteArray(writer, PackDynaShadows(pdmaskIDs, nS.DynaShadowsDirO));
                                             BinaryExtensions.WriteArray(writer, PackDynaShadows(pdmaskIDs, nS.DynaShadowsColO));
-                                            BinaryExtensions.WriteArray(writer, PackDynaShadows(pdmaskIDs, nS.DynaShadowsDirX));
-                                            BinaryExtensions.WriteArray(writer, PackDynaShadows(pdmaskIDs, nS.DynaShadowsColX));
+                                            BinaryExtensions.WriteArray(writer, PackDynaShadows(pdmaskIDXs, nS.DynaShadowsDirX));
+                                            BinaryExtensions.WriteArray(writer, PackDynaShadows(pdmaskIDXs, nS.DynaShadowsColX));
                                             if (nS.LengthHeader >= 18 * sizeof(uint))
                                             {
                                                 BinaryExtensions.WriteArray(writer, pdsmaskIDs!);
                                                 BinaryExtensions.WriteArray(writer, pdsmasks!);
                                                 BinaryExtensions.WriteArray(writer, pdscols!);
+                                                BinaryExtensions.WriteArray(writer, pdsmaskIDXs!);
                                                 BinaryExtensions.WriteArray(writer, pdsmaskXs!);
                                                 BinaryExtensions.WriteArray(writer, pdscolXs!);
                                                 if (nS.LengthHeader >= 19 * sizeof(uint))
@@ -214,8 +207,8 @@ namespace Serum_dynamizer
                             }
                         }
                     }
-                    frm.tLog.Text += "File written successfully." + Environment.NewLine;
-                    frm.tLog.Text += "Size of the µSerum is:" + stream.Length.ToString();
+                    frm.tLog.AppendText("File written successfully." + Environment.NewLine);
+                    frm.tLog.AppendText("Size of the µSerum is: " + Form1.FormatSize(stream.Length));
                 }
             }
         }
@@ -228,7 +221,7 @@ namespace Serum_dynamizer
             {
                 if (pdmaskIDs[i] != 0xFFFF)
                 {
-                    for (int j = 0; j < MAX_DYNA_SETS_PER_FRAMEN; j++)
+                    for (int j = 0; j < MAX_DYNA_SETS_PER_FRAMEN; j++) // forcément du v2 pour les dyna shadows
                     {
                         dsbuf.Add(DSElt[i * MAX_DYNA_SETS_PER_FRAMEN + j]);
                     }
@@ -236,16 +229,9 @@ namespace Serum_dynamizer
             }
             return dsbuf.ToArray();
         }
-        /// <summary>
-        /// pack an array of bytes containing only 0 and 1 into an array of bytes where each bit represents a value from the input array
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="ArgumentException"></exception>
         public static byte[] ConvertByteToBit(byte[] input)
         {
-            int outputLength = input.Length / 8;
+            int outputLength = (input.Length + 7) / 8;
             byte[] output = new byte[outputLength]; // each byte is initialized to 0
 
             for (int i = 0; i < input.Length; i++)
@@ -298,25 +284,26 @@ namespace Serum_dynamizer
             }
             return (nXsprs, sprids.ToArray(), ConvertByteToBit(sprmsk.ToArray()), sprcol.ToArray());
         }
-        (UInt16,UInt16, UInt16[], byte[], byte[], byte[], ushort[], ushort[]) ConvertDMasks(uint width, uint height, uint widthx, uint heightx, uint nocolors, bool isv2, byte[] DynaMasks, byte[] DynaMasksX, byte[] v1Dyna4Cols, ushort[] Dyna4Cols, ushort[] Dyna4ColsX)
+        (UInt16, UInt16, UInt16[], UInt16[], byte[], byte[], byte[], ushort[], ushort[]) ConvertDMasks(uint nframes, int max_n_sets, uint width, uint height, uint widthx, uint heightx, uint nocolors, bool isv2, byte[] DynaMasks, byte[] DynaMasksX, byte[] v1Dyna4Cols, ushort[] Dyna4Cols, ushort[] Dyna4ColsX)
         {
             List<UInt16> pdmaskIDs = new List<UInt16>();
+            List<UInt16> pdmaskIDXs = new List<UInt16>();
             List<byte> pdmasks = new List<byte>();
             List<byte> pdmaskXs = new List<byte>();
             List<byte> pdcolv1s = new List<byte>();
             List<ushort> pdcols = new List<ushort>();
             List<ushort> pdcolXs = new List<ushort>();
-            uint posmask = 0, posmaskX=0;
-            uint poscolv1 = 0, poscol = 0;
+            //uint posmask = 0, posmaskX=0;
+            //uint poscolv1 = 0, poscol = 0;
             ushort acmsk = 0, acmskx = 0;
-            while (posmask <= DynaMasks.Length - width * height)
+            for (uint k = 0; k < nframes; k++)
             {
                 bool isempty = true;
                 byte bitmask = 0x80;
                 byte valb = 0;
                 for (int i = 0; i < width * height; i++)
                 {
-                    if (DynaMasks[posmask + i] > 0)
+                    if (DynaMasks[k * width * height + i] > 0)
                     {
                         isempty = false;
                         valb |= bitmask;
@@ -329,7 +316,6 @@ namespace Serum_dynamizer
                         bitmask = 0x80;
                     }
                 }
-                posmask+= width * height;
                 if (isempty)
                 {
                     pdmaskIDs.Add(0xFFFF);
@@ -338,17 +324,16 @@ namespace Serum_dynamizer
                 else
                 {
                     pdmaskIDs.Add(acmsk);
-                    if (!isv2)
+                    if (!isv2) // jamais vrai pour les sprites dynamiques (v>=18)
                     {
-                        pdcolv1s.AddRange(new ArraySegment<byte>(v1Dyna4Cols, (int)poscolv1, (int)nocolors * 16));
+                        pdcolv1s.AddRange(new ArraySegment<byte>(v1Dyna4Cols, (int)(k * nocolors * 16), (int)nocolors * 16));
                     }
                     else
                     {
-                        pdcols.AddRange(new ArraySegment<ushort>(Dyna4Cols, (int)poscol, (int)nocolors * MAX_DYNA_SETS_PER_FRAMEN));
+                        pdcols.AddRange(new ArraySegment<ushort>(Dyna4Cols, (int)(k * nocolors * max_n_sets), (int)nocolors * max_n_sets));
                     }
                     acmsk++;
                 }
-                poscolv1 += nocolors * 16;
                 if (isv2)
                 {
                     isempty = true;
@@ -356,7 +341,7 @@ namespace Serum_dynamizer
                     valb = 0;
                     for (int i = 0; i < widthx * heightx; i++)
                     {
-                        if (DynaMasksX[posmaskX + i] > 0)
+                        if (DynaMasksX[k * widthx * heightx + i] > 0)
                         {
                             isempty = false;
                             valb |= bitmask;
@@ -369,37 +354,27 @@ namespace Serum_dynamizer
                             bitmask = 0x80;
                         }
                     }
-                    posmaskX += widthx * heightx;
                     if (isempty)
                     {
-                        pdmaskIDs.Add(0xFFFF);
+                        pdmaskIDXs.Add(0xFFFF);
                         pdmaskXs.RemoveRange(pdmaskXs.Count - (int)(widthx * heightx / 8), (int)(widthx * heightx / 8));
                     }
                     else
                     {
-                        pdmaskIDs.Add(acmskx);
-                        pdcolXs.AddRange(new ArraySegment<ushort>(Dyna4ColsX, (int)poscol, (int)nocolors * MAX_DYNA_SETS_PER_FRAMEN));
+                        pdmaskIDXs.Add(acmskx);
+                        pdcolXs.AddRange(new ArraySegment<ushort>(Dyna4ColsX, (int)(k * nocolors * max_n_sets), (int)nocolors * max_n_sets));
                         acmskx++;
                     }
-                    poscol += nocolors * MAX_DYNA_SETS_PER_FRAMEN;
                 }
             }
-            return (acmsk, acmskx, pdmaskIDs.ToArray(), pdmasks.ToArray(), pdmaskXs.ToArray(), pdcolv1s.ToArray(), pdcols.ToArray(), pdcolXs.ToArray());
+            return (acmsk, acmskx, pdmaskIDs.ToArray(), pdmaskIDXs.ToArray(), pdmasks.ToArray(), pdmaskXs.ToArray(), pdcolv1s.ToArray(), pdcols.ToArray(), pdcolXs.ToArray());
         }
-        /// <summary>
-        /// Pack thr color rotations into a more compact form
-        /// </summary>
-        /// <param name="CR"></param>
-        /// <returns>first int is the length of the definition buffer
-        /// second int is the length of the content buffer
-        /// third is the definition buffer MAX_COLOR_ROTATIONN entries per frame, an index per rotation in the content buffer)
-        /// fourth is the content buffer with all the rotations in a row, the first value per rotation is the length in colors, the second is the delay between 2 shifts and after are the colors to rotate</returns>
         (uint, uint[], UInt16[]) PackColorRotations(UInt16[] CR)
         {
             List<uint> def = new List<uint>();
             List<UInt16> buf = new List<UInt16>();
             int acpos = 0;
-            while (acpos<=CR.Length- MAX_COLOR_ROTATIONN*MAX_LENGTH_COLOR_ROTATION)
+            while (acpos <= CR.Length - MAX_COLOR_ROTATIONN * MAX_LENGTH_COLOR_ROTATION)
             {
                 uint nrot = 0;
                 for (int i = 0; i < MAX_COLOR_ROTATIONN; i++)
