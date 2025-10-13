@@ -5,7 +5,8 @@ namespace Serum_dynamizer
 {
     public partial class Form1 : Form
     {
-        private string _filePath = "C:\\nul.crz";
+        public static string initial_dir = "G:\\VPinball\\VPinMAME\\dmddump\\";
+        private string _filePath = initial_dir+"nul.crz";
         public Form1()
         {
             InitializeComponent();
@@ -20,7 +21,7 @@ namespace Serum_dynamizer
                 using (OpenFileDialog openFileDialog = new OpenFileDialog())
                 {
                     openFileDialog.Title = "Open a native Serum file";
-                    openFileDialog.InitialDirectory = "c:\\";
+                    openFileDialog.InitialDirectory = initial_dir;
                     openFileDialog.Filter = "Serum file|*.crom;*.crz;";
                     openFileDialog.FilterIndex = 1;
                     openFileDialog.RestoreDirectory = true;
@@ -56,6 +57,7 @@ namespace Serum_dynamizer
 
         private void bDynamize_Click(object sender, EventArgs e)
         {
+            tLog.Text = "";
             if (tNativeSerum.Text == "" || tHomeoSerum.Text == "")
             {
                 MessageBox.Show("You must choose a native Serum file and a directory for the micro Serum first!");
@@ -65,14 +67,8 @@ namespace Serum_dynamizer
             bHomeoSerum.Enabled = false;
             bNativeSerum.Enabled = false;
             Serum nativeserum = new Serum(_filePath, this);
-            if (nativeserum.nFrames > 0)
-            {
-                USerum uSerum = new USerum(nativeserum, this);
-            }
-            else
-            {
-                MessageBox.Show("Error loading the native Serum file!");
-            }
+            if (nativeserum.nFrames > 0) { USerum uSerum = new USerum(nativeserum, this); }
+            else MessageBox.Show("Error loading the native Serum file!");
             bDynamize.Enabled = true;
             bHomeoSerum.Enabled = true;
             bNativeSerum.Enabled = true;
