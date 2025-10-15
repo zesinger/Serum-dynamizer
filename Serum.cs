@@ -44,15 +44,12 @@ namespace Serum_dynamizer
                             // part for colorization
                             //byte*		cPal;		// byte[3*nC*nF] Palette for each colorized frames
         public byte[] isExtraFrame;    // byte[nF] is the extra frame available for that frame (1) or not (0)?
-        public byte[] Palettes;     // byte[3*nC*nF] Palette for each colorized frames
-        public byte[] v1cFrames;   // byte[nF*fW*fH] Colorized frames color for v1 Serum
         public ushort[] cFrames;    // unsigned short[nF*fW*fH] Colorized frames color indices, if this frame has sprites, it is the colorized frame of the static scene, with no sprite
         public ushort[] cFramesX;   // unsigned short[nF*fWX*fHX] Colorized extra frames color indices, if this frame has sprites, it is the colorized frame of the static scene, with no sprite
         public byte[] DynaMasks;   // byte[nF*fW*fH] Mask for dynamic content for each frame.  The value (<MAX_DYNA_SETS_PER_FRAME) points to a sequence of 4/16 colors in Dyna4Cols. 255 means not a dynamic content.
         public byte[] DynaMasksX;  // byte[nF*fWX*fHX] Mask for dynamic content for each extra frame.  The value (<MAX_DYNA_SETS_PER_FRAME) points to a sequence of 4/16 colors in Dyna4Cols. 255 means not a dynamic content.
         public ushort[] Dyna4Cols;  // unsigned short[nF*MAX_DYNA_SETS_PER_FRAMEN*noC] Color sets used to fill the dynamic content of frames
         public ushort[] Dyna4ColsX;  // unsigned short[nF*MAX_DYNA_SETS_PER_FRAMEN*noC] Color sets used to fill the dynamic content of extra frames
-        public byte[] v1Dyna4Cols; // byte[nF*16*noC] Color sets used to fill the dynamic content of frames for v1 Serum
         public byte[] FrameSprites; // byte[nF*MAX_SPRITES_PER_FRAME] Sprite numbers to look for in this frame max=MAX_SPRITES_PER_FRAME 255 if no sprite
         public ushort[] FrameSpriteBB; // unsigned short[nF*MAX_SPRITES_PER_FRAME*4] The bounding boxes of the sprites described above [minx,miny,maxx,maxy]
         public byte[] isExtraSprite;   // byte[nS] is the extra sprite available for that frame (1) or not (0)?
@@ -60,10 +57,8 @@ namespace Serum_dynamizer
         public ushort[] SpriteColored; // unsigned short[nS*MAX_SPRITE_WIDTH*MAX_SPRITE_HEIGHT] Sprite drawing
         public byte[] SpriteMaskX; // byte[nS*MAX_SPRITE_WIDTH*MAX_SPRITE_HEIGHT] equivalent to SpriteOriginal for extra resolution only with mask 255 if out of the sprite
         public ushort[] SpriteColoredX; // unsigned short[nS*MAX_SPRITE_WIDTH*MAX_SPRITE_HEIGHT] Sprite extra resolution drawing
-        public ushort[] v1SpriteDescription; // unsigned short[nS*128*128] Sprite drawing on 2 bytes per pixel:
                                            // - the first is the 4-or-16-color sprite original drawing (255 means this is a transparent=ignored pixel) for Comparison step
                                            // - the second is the 64-color sprite for Colorization step
-        public byte[] v1ColorRotations; // byte[3*8*nF] 8 max color rotations per frame, 1st value is the position in the palette of the first color to rotate, 2nd value is the length of the rotation (number of colors), 3rd value is the length in ten milliseconds between 2 shifts
         public ushort[] ColorRotations; // unsigned short[MAX_COLOR_ROTATION*MAX_LENGTH_COLOR_ROTATION*nF] MAX_COLOR_ROTATION color rotations per frame and the maximum number of colors in the rotation MAX_LENGTH_COLOR_ROTATION-2 (first value is the length, second value is the length in milliseconds between 2 shifts)
         public ushort[] ColorRotationsX; // unsigned short[MAX_COLOR_ROTATION*MAX_LENGTH_COLOR_ROTATION*nF] MAX_COLOR_ROTATION color rotations per extra frame and the maximum number of colors in the rotation MAX_LENGTH_COLOR_ROTATION-2 (first value is the length, second value is the length in milliseconds between 2 shifts)
         public ushort[] SpriteDetAreas; // unsigned short[nS*4*MAX_SPRITE_DETECT_AREAS] rectangles (left, top, width, height) as areas to detect sprites (left=0xffff -> no zone)
@@ -72,10 +67,8 @@ namespace Serum_dynamizer
         public uint[] TriggerID; // uint[nF] does this frame triggers any event ID, 0xFFFFFFFF if not
         public byte[] isExtraBackground;   // byte[nB] is the extra background available for that frame (1) or not (0)?
         public ushort[] BackgroundFrames; // unsigned short[nB*fW*fH] Background frame images
-        public byte[] v1BackgroundFrames; // byte[nB*fW*fH] Background frame images for v1 Serum
         public ushort[] BackgroundFramesX; // unsigned short[nB*fWX*fHX] Background extra frame images
         public ushort[] BackgroundID; // unsigned short[nF] Indices of the backgrounds for each frame 0xffff if no background
-        public ushort[] v1BackgroundBB; // unsigned short[nF*4] Bounding box of the background for each frame [minx,miny,maxx,maxy] (not used anymore)
         public byte[] BackgroundMask; // byte[nF*fW*fH] Mask to apply backgrounds for each frame (make BackgroundBB obsolete)
         public byte[] BackgroundMaskX; // byte[nF*fWX*fHX] Mask to apply backgrounds for each extra frame (make BackgroundBB obsolete)
         public byte[] DynaShadowsDirO; // byte[nF*MAX_DYNA_SETS_PER_FRAMEN] Flags giving the direction of the dynamic content shadows for original frame, can be OR-ed
@@ -135,15 +128,16 @@ namespace Serum_dynamizer
                         frm.tLog.AppendText("  ROM name: " + new string(name).TrimEnd('\0') + Environment.NewLine);
                         LengthHeader = reader.ReadUInt32();
                         bool isNewFormat = (LengthHeader >= 14 * sizeof(uint));
-                        if (!isNewFormat) frm.tLog.AppendText("  Serum v1 file" + Environment.NewLine);
-                        else frm.tLog.AppendText("  Serum v2 file" + Environment.NewLine);
+                        if (!isNewFormat)
+                        {
+                            MessageBox.Show("This only works with Serum v2 files, sorry!");
+                            Application.Exit();
+                        }
+                        frm.tLog.AppendText("  Serum v2 file" + Environment.NewLine);
                         fWidth = reader.ReadUInt32();
                         fHeight = reader.ReadUInt32();
-                        if (isNewFormat)
-                        {
-                            fWidthX = reader.ReadUInt32();
-                            fHeightX = reader.ReadUInt32();
-                        }
+                        fWidthX = reader.ReadUInt32();
+                        fHeightX = reader.ReadUInt32();
                         frm.tLog.AppendText("  Frame low res size: " + fWidth + "x" + fHeight + Environment.NewLine);
                         frm.tLog.AppendText("  Frame high res size: " + fWidthX + "x" + fHeightX + Environment.NewLine);
                         nFrames = reader.ReadUInt32();
@@ -156,7 +150,7 @@ namespace Serum_dynamizer
                         if (!isNewFormat) nMovMasks = reader.ReadUInt32();
                         nSprites = reader.ReadUInt32();
                         frm.tLog.AppendText("  Number of sprites: " + nSprites + Environment.NewLine);
-                        if (LengthHeader >= 13 * sizeof(uint)) nBackgrounds = reader.ReadUInt16();
+                        nBackgrounds = reader.ReadUInt16();
                         frm.tLog.AppendText("  Number of backgrounds: " + nBackgrounds + Environment.NewLine);
                         if (LengthHeader >= 20 * sizeof(uint)) is256x64 = reader.ReadInt32();
                         if (is256x64 > 0) frm.tLog.AppendText("  Original resolution is 256x64" + Environment.NewLine);
@@ -185,13 +179,11 @@ namespace Serum_dynamizer
                         SpriteDetAreas = new ushort[nSprites * MAX_SPRITE_DETECT_AREAS * 4];
                         SpriteDetDwords = new uint[nSprites * MAX_SPRITE_DETECT_AREAS];
                         SpriteDetDwordPos = new ushort[nSprites * MAX_SPRITE_DETECT_AREAS * 4];
-                        v1SpriteDescription = new ushort[nSprites * 128 * 128];
                         TriggerID = new uint[nFrames];
                         isExtraBackground = new byte[nBackgrounds];
                         BackgroundFrames = new ushort[nBackgrounds * fWidth * fHeight];
                         BackgroundFramesX = new ushort[nBackgrounds * fWidthX * fHeightX];
                         BackgroundID = new ushort[nFrames];
-                        v1BackgroundBB = new ushort[nFrames * 4];
                         BackgroundMask = new byte[nFrames * fWidth * fHeight];
                         BackgroundMaskX = new byte[nFrames * fWidthX * fHeightX];
                         DynaShadowsDirO = new byte[nFrames * MAX_DYNA_SETS_PER_FRAMEN];
@@ -208,106 +200,48 @@ namespace Serum_dynamizer
                         CompMaskID = reader.ReadBytes((int)nFrames);
                         if (is256x64 > 0) CompMasks = reader.ReadBytes((int)(nCompMasks * 256 * 64));
                         else CompMasks = reader.ReadBytes((int)(nCompMasks * fWidth * fHeight));
-                        if (!isNewFormat)
-                        {
-                            Palettes = reader.ReadBytes((int)(3 * ncColors * nFrames));
-                            v1cFrames = reader.ReadBytes((int)(nFrames * fWidth * fHeight));
-                        }
-                        else
-                        {
-                            isExtraFrame = reader.ReadBytes((int)nFrames);
-                            cFrames = BinaryExtensions.ReadArray<ushort>(reader, nFrames * fWidth * fHeight);
-                            cFramesX = BinaryExtensions.ReadArray<ushort>(reader, nFrames * fWidthX * fHeightX);
-                        }
+                        isExtraFrame = reader.ReadBytes((int)nFrames);
+                        cFrames = BinaryExtensions.ReadArray<ushort>(reader, nFrames * fWidth * fHeight);
+                        cFramesX = BinaryExtensions.ReadArray<ushort>(reader, nFrames * fWidthX * fHeightX);
                         DynaMasks = reader.ReadBytes((int)(nFrames * fWidth * fHeight));
-                        if (!isNewFormat)
-                        {
-                            v1Dyna4Cols = reader.ReadBytes((int)(nFrames * 16 * (int)noColors));
-                        }
-                        else
-                        {
-                            DynaMasksX = reader.ReadBytes((int)(nFrames * fWidthX * fHeightX));
-                            Dyna4Cols = BinaryExtensions.ReadArray<ushort>(reader, nFrames * MAX_DYNA_SETS_PER_FRAMEN * noColors);
-                            Dyna4ColsX = BinaryExtensions.ReadArray<ushort>(reader, nFrames * MAX_DYNA_SETS_PER_FRAMEN * noColors);
-                            isExtraSprite = reader.ReadBytes((int)nSprites);
-                        }
+                        DynaMasksX = reader.ReadBytes((int)(nFrames * fWidthX * fHeightX));
+                        Dyna4Cols = BinaryExtensions.ReadArray<ushort>(reader, nFrames * MAX_DYNA_SETS_PER_FRAMEN * noColors);
+                        Dyna4ColsX = BinaryExtensions.ReadArray<ushort>(reader, nFrames * MAX_DYNA_SETS_PER_FRAMEN * noColors);
+                        isExtraSprite = reader.ReadBytes((int)nSprites);
                         FrameSprites = reader.ReadBytes((int)(nFrames * MAX_SPRITES_PER_FRAME));
-                        if (!isNewFormat)
-                        {
-                            v1SpriteDescription = BinaryExtensions.ReadArray<ushort>(reader, nSprites * 128 * 128);
-                        }
-                        else
-                        {
-                            SpriteOriginal = reader.ReadBytes((int)(nSprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT));
-                            SpriteColored = BinaryExtensions.ReadArray<ushort>(reader, nSprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
-                            SpriteMaskX = reader.ReadBytes((int)(nSprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT));
-                            SpriteColoredX = BinaryExtensions.ReadArray<ushort>(reader, nSprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
-                        }
+                        SpriteOriginal = reader.ReadBytes((int)(nSprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT));
+                        SpriteColored = BinaryExtensions.ReadArray<ushort>(reader, nSprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+                        SpriteMaskX = reader.ReadBytes((int)(nSprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT));
+                        SpriteColoredX = BinaryExtensions.ReadArray<ushort>(reader, nSprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
                         reader.ReadBytes((int)nFrames ); // Ignore the active frame content
-                        if (LengthHeader >= 9 * sizeof(uint))
+                        ColorRotations = BinaryExtensions.ReadArray<ushort>(reader, MAX_COLOR_ROTATIONN * MAX_LENGTH_COLOR_ROTATION * nFrames);
+                        ColorRotationsX = BinaryExtensions.ReadArray<ushort>(reader, MAX_COLOR_ROTATIONN * MAX_LENGTH_COLOR_ROTATION * nFrames);
+                        SpriteDetDwords = BinaryExtensions.ReadArray<uint>(reader, nSprites * MAX_SPRITE_DETECT_AREAS);
+                        SpriteDetDwordPos = BinaryExtensions.ReadArray<ushort>(reader, nSprites * MAX_SPRITE_DETECT_AREAS);
+                        SpriteDetAreas = BinaryExtensions.ReadArray<ushort>(reader, nSprites * MAX_SPRITE_DETECT_AREAS * 4);
+                        TriggerID = BinaryExtensions.ReadArray<uint>(reader, nFrames);
+                        FrameSpriteBB = BinaryExtensions.ReadArray<ushort>(reader, nFrames * MAX_SPRITES_PER_FRAME * 4);
+                        isExtraBackground = reader.ReadBytes((int)nBackgrounds);
+                        BackgroundFrames = BinaryExtensions.ReadArray<ushort>(reader, nBackgrounds * fWidth * fHeight);
+                        BackgroundFramesX = BinaryExtensions.ReadArray<ushort>(reader, nBackgrounds * fWidthX * fHeightX);
+                        for (int i = 0; i < nFrames; i++) BackgroundID[i] = reader.ReadUInt16();
+                            BackgroundMask = reader.ReadBytes((int)(nFrames * fWidth * fHeight));
+                            BackgroundMaskX = reader.ReadBytes((int)(nFrames * fWidthX * fHeightX));
+                        if (LengthHeader >= 15 * sizeof(uint))
                         {
-                            if (!isNewFormat)
+                            DynaShadowsDirO = reader.ReadBytes((int)(nFrames * MAX_DYNA_SETS_PER_FRAMEN));
+                            DynaShadowsColO = BinaryExtensions.ReadArray<ushort>(reader, nFrames * MAX_DYNA_SETS_PER_FRAMEN);
+                            DynaShadowsDirX = reader.ReadBytes((int)(nFrames * MAX_DYNA_SETS_PER_FRAMEN));
+                            DynaShadowsColX = BinaryExtensions.ReadArray<ushort>(reader, nFrames * MAX_DYNA_SETS_PER_FRAMEN);
+                            if (LengthHeader >= 18 * sizeof(uint))
                             {
-                                v1ColorRotations = reader.ReadBytes((int)(3 * 8 * nFrames));
-                            }
-                            else
-                            {
-                                ColorRotations = BinaryExtensions.ReadArray<ushort>(reader, MAX_COLOR_ROTATIONN * MAX_LENGTH_COLOR_ROTATION * nFrames);
-                                ColorRotationsX = BinaryExtensions.ReadArray<ushort>(reader, MAX_COLOR_ROTATIONN * MAX_LENGTH_COLOR_ROTATION * nFrames);
-                            }
-                            if (LengthHeader >= 10 * sizeof(uint))
-                            {
-                                SpriteDetDwords = BinaryExtensions.ReadArray<uint>(reader, nSprites * MAX_SPRITE_DETECT_AREAS);
-                                SpriteDetDwordPos = BinaryExtensions.ReadArray<ushort>(reader, nSprites * MAX_SPRITE_DETECT_AREAS);
-                                SpriteDetAreas = BinaryExtensions.ReadArray<ushort>(reader, nSprites * MAX_SPRITE_DETECT_AREAS * 4);
-                                if (LengthHeader >= 11 * sizeof(uint))
+                                DynaSprite4Cols = BinaryExtensions.ReadArray<ushort>(reader, nSprites * MAX_DYNA_SETS_PER_SPRITE * noColors);
+                                DynaSprite4ColsX = BinaryExtensions.ReadArray<ushort>(reader, nSprites * MAX_DYNA_SETS_PER_SPRITE * noColors);
+                                DynaSpriteMasks = reader.ReadBytes((int)(nSprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT));
+                                DynaSpriteMasksX = reader.ReadBytes((int)(nSprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT));
+                                if (LengthHeader >= 19 * sizeof(uint))
                                 {
-                                    TriggerID = BinaryExtensions.ReadArray<uint>(reader, nFrames);
-                                    if (LengthHeader >= 12 * sizeof(uint))
-                                    {
-                                        FrameSpriteBB = BinaryExtensions.ReadArray<ushort>(reader, nFrames * MAX_SPRITES_PER_FRAME * 4);
-                                        if (LengthHeader >= 13 * sizeof(uint))
-                                        {
-                                            if (!isNewFormat)
-                                            {
-                                                v1BackgroundFrames = reader.ReadBytes((int)(nBackgrounds * fWidth * fHeight));
-                                            }
-                                            else
-                                            {
-                                                isExtraBackground = reader.ReadBytes((int)nBackgrounds);
-                                                BackgroundFrames = BinaryExtensions.ReadArray<ushort>(reader, nBackgrounds * fWidth * fHeight);
-                                                BackgroundFramesX = BinaryExtensions.ReadArray<ushort>(reader, nBackgrounds * fWidthX * fHeightX);
-                                            }
-                                            for (int i = 0; i < nFrames; i++) BackgroundID[i] = reader.ReadUInt16();
-                                            if (!isNewFormat)
-                                            {
-                                                v1BackgroundBB = BinaryExtensions.ReadArray<ushort>(reader, 4 * nFrames);
-                                            }
-                                            else
-                                            {
-                                                BackgroundMask = reader.ReadBytes((int)(nFrames * fWidth * fHeight));
-                                                BackgroundMaskX = reader.ReadBytes((int)(nFrames * fWidthX * fHeightX));
-                                            }
-                                            if (LengthHeader >= 15 * sizeof(uint))
-                                            {
-                                                DynaShadowsDirO = reader.ReadBytes((int)(nFrames * MAX_DYNA_SETS_PER_FRAMEN));
-                                                DynaShadowsColO = BinaryExtensions.ReadArray<ushort>(reader, nFrames * MAX_DYNA_SETS_PER_FRAMEN);
-                                                DynaShadowsDirX = reader.ReadBytes((int)(nFrames * MAX_DYNA_SETS_PER_FRAMEN));
-                                                DynaShadowsColX = BinaryExtensions.ReadArray<ushort>(reader, nFrames * MAX_DYNA_SETS_PER_FRAMEN);
-                                                if (LengthHeader >= 18 * sizeof(uint))
-                                                {
-                                                    DynaSprite4Cols = BinaryExtensions.ReadArray<ushort>(reader, nSprites * MAX_DYNA_SETS_PER_SPRITE * noColors);
-                                                    DynaSprite4ColsX = BinaryExtensions.ReadArray<ushort>(reader, nSprites * MAX_DYNA_SETS_PER_SPRITE * noColors);
-                                                    DynaSpriteMasks = reader.ReadBytes((int)(nSprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT));
-                                                    DynaSpriteMasksX = reader.ReadBytes((int)(nSprites * MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT));
-                                                    if (LengthHeader >= 19 * sizeof(uint))
-                                                    {
-                                                        SpriteShapeMode = reader.ReadBytes((int)nSprites);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+                                    SpriteShapeMode = reader.ReadBytes((int)nSprites);
                                 }
                             }
                         }
