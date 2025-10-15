@@ -62,6 +62,7 @@ namespace Serum_dynamizer
                     {
                         if (nS.TriggerID[i] != 0xFFFFFFFF) ntriggers++;
                     }
+                    writer.Write(ntriggers);
                     // ---------------------- Speed optimized data = not compressed (for identification) -------------------
                     // nframes uints : hash code of each frame
                     BinaryExtensions.WriteArray(writer, nS.HashCode);
@@ -228,7 +229,7 @@ namespace Serum_dynamizer
                         // fWidth * fHeight ushort : colorized background
                         BinaryExtensions.AppendArrayToBuffer(framedata, nS.BackgroundFrames, i, nS.fWidth * nS.fHeight);
                         // if this background has an extra background, fWidthX * fHeightX ushort : colorized extra background
-                        if (nS.isExtraFrame[i] > 0) BinaryExtensions.AppendArrayToBuffer(framedata, nS.BackgroundFramesX, i, nS.fWidthX * nS.fHeightX);
+                        if (nS.isExtraBackground[i] > 0) BinaryExtensions.AppendArrayToBuffer(framedata, nS.BackgroundFramesX, i, nS.fWidthX * nS.fHeightX);
                         // compress each background using fast lz4
                         (int compsize, byte[] compbuf) = Lz4_Compress(framedata);
                         // 1 int : in the file, we store the size of the original uncompressed data of the background
