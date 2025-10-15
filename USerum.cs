@@ -30,8 +30,9 @@ namespace Serum_dynamizer
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     frm.tLog.AppendText(Environment.NewLine + "Writing " + Path.GetFileName(filepath) + Environment.NewLine);
+                    // ---------------------- Header -------------------
                     // 64 char: name of the Serum
-                    BinaryExtensions.WriteArray<char>(writer, nS.name);
+                    BinaryExtensions.WriteArray(writer, nS.name);
                     ushort version = (ushort)(nS.LengthHeader / sizeof(uint));
                     // 1 ushort: version of the Serum (former length of header / 4)
                     writer.Write(version);
@@ -55,12 +56,18 @@ namespace Serum_dynamizer
                     writer.Write((ushort)nS.nBackgrounds);
                     // if versions >= 20 : 1 byte: is256x64
                     if (version >= 20) writer.Write((byte)nS.is256x64);
+                    // 1 uint: number of active trigger ID
+                    uint ntriggers = 0;
+                    for (int i = 0; i < nS.nFrames; i++)
+                    {
+                        if (nS.TriggerID[i] != 0xFFFFFFFF) ntriggers++;
+                    }
                     // ---------------------- Speed optimized data = not compressed (for identification) -------------------
-                    // nframes bytes: hash code of each frame
+                    // nframes uints : hash code of each frame
                     BinaryExtensions.WriteArray(writer, nS.HashCode);
-                    // (nframes + 7)/8 bytes: shape comparison mode of each frame (bit-compressed)
+                    // (nframes + 7)/8 bytes : shape comparison mode of each frame (bit-compressed)
                     BinaryExtensions.WriteArray(writer, ConvertByteToBit(nS.ShapeCompMode));
-                    // nFrames ushorts: IDs of the comparison masks for each frame
+                    // nFrames bytes : IDs of the comparison masks for each frame
                     BinaryExtensions.WriteArray(writer, nS.CompMaskID);
                     // (ncompmasks * fWidth * fHeight + 7) / 8 bytes : bitmasks for comparison (bit-compressed)
                     BinaryExtensions.WriteArray(writer, ConvertByteToBit(nS.CompMasks));
@@ -80,9 +87,9 @@ namespace Serum_dynamizer
                     BinaryExtensions.WriteArray(writer, ConvertByteToBit(nS.isExtraSprite));
                     // (nBackgrounds + 7) / 8 bytes : is Extra Background (bit-compressed)
                     BinaryExtensions.WriteArray(writer, ConvertByteToBit(nS.isExtraBackground));
-                    // --------------------------- Full Lz4 compressed block : frames -------------------------
-                    // we store the positions of the data for each frame
-                    long[] framepositions = new long[nS.nFrames];
+                    // --------------------------- Lz4 compressed block : frames -------------------------
+                    // we store the positions of the data for each frame + the end as the length of the frames buffer
+                    long[] framepositions = new long[nS.nFrames + 1];
                     // nFrames uint : positions of the frames in the file frame data (initially all sets to 0, but updated when everything is calculated)
                     long idxposition = writer.BaseStream.Position;
                     BinaryExtensions.WriteArray(writer, framepositions);
@@ -160,16 +167,18 @@ namespace Serum_dynamizer
                         }
                         // compress each frame using fast lz4
                         (int compsize, byte[] compbuf) = Lz4_Compress(framedata);
-                        // 1 int : in the file, we store the size of the frame once lz4-compressed
-                        writer.Write(compsize);
+                        // 1 int : in the file, we store the size of the original uncompressed buffer
+                        writer.Write(framedata.Length);
                         // compsize bytes : then we store the Lz4-compressed frame
                         BinaryExtensions.WriteArray(writer, compbuf);
                     }
+                    // we store the current position as the length of the data
+                    framepositions[nS.nFrames] = writer.BaseStream.Position - initialframeposition;
                     // When all frames are processed, we update the position of the frames
                     BinaryExtensions.ModifyFileAtSpecificOffset(writer, idxposition, framepositions, true);
                     // --------------------------- Full Lz4 compressed block : sprites -------------------------
                     // we store the positions of the data for each sprite
-                    framepositions = new long[nS.nSprites];
+                    framepositions = new long[nS.nSprites + 1];
                     // nFrames uint : positions of the sprites in the file sprite data (initially all sets to 0, but updated when everything is calculated)
                     idxposition = writer.BaseStream.Position;
                     BinaryExtensions.WriteArray(writer, framepositions);
@@ -197,16 +206,17 @@ namespace Serum_dynamizer
                         }
                         // compress each sprite using fast lz4
                         (int compsize, byte[] compbuf) = Lz4_Compress(framedata);
-                        // 1 int : in the file, we store the size of the sprite once lz4-compressed
-                        writer.Write(compsize);
+                        // 1 int : in the file, we store the size of the original uncompressed data of the sprite 
+                        writer.Write(framedata.Length);
                         // compsize bytes : then we store the Lz4-compressed sprite
                         BinaryExtensions.WriteArray(writer, compbuf);
                     }
+                    framepositions[nS.nSprites] = writer.BaseStream.Position - initialframeposition;
                     // When all sprites are processed, we update the position of the sprites
                     BinaryExtensions.ModifyFileAtSpecificOffset(writer, idxposition, framepositions, true);
                     // --------------------------- Full Lz4 compressed block : backgrounds -------------------------
                     // we store the positions of the data for each background
-                    framepositions = new long[nS.nBackgrounds];
+                    framepositions = new long[nS.nBackgrounds + 1];
                     // nFrames uint : positions of the backgrounds in the file BG data (initially all sets to 0, but updated when everything is calculated)
                     idxposition = writer.BaseStream.Position;
                     BinaryExtensions.WriteArray(writer, framepositions);
@@ -218,14 +228,15 @@ namespace Serum_dynamizer
                         // fWidth * fHeight ushort : colorized background
                         BinaryExtensions.AppendArrayToBuffer(framedata, nS.BackgroundFrames, i, nS.fWidth * nS.fHeight);
                         // if this background has an extra background, fWidthX * fHeightX ushort : colorized extra background
-                        if (nS.isExtraBackground[i] > 0) BinaryExtensions.AppendArrayToBuffer(framedata, nS.BackgroundFramesX, i, nS.fWidthX * nS.fHeightX);
+                        if (nS.isExtraFrame[i] > 0) BinaryExtensions.AppendArrayToBuffer(framedata, nS.BackgroundFramesX, i, nS.fWidthX * nS.fHeightX);
                         // compress each background using fast lz4
                         (int compsize, byte[] compbuf) = Lz4_Compress(framedata);
-                        // 1 int : in the file, we store the size of the background once lz4-compressed
-                        writer.Write(compsize);
+                        // 1 int : in the file, we store the size of the original uncompressed data of the background
+                        writer.Write(framedata.Length);
                         // compsize bytes : then we store the Lz4-compressed background
                         BinaryExtensions.WriteArray(writer, compbuf);
                     }
+                    framepositions[nS.nBackgrounds] = writer.BaseStream.Position - initialframeposition;
                     // When all backgrounds are processed, we update the position of the backgrounds
                     BinaryExtensions.ModifyFileAtSpecificOffset(writer, idxposition, framepositions, true);
 
