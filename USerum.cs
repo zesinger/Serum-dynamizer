@@ -1,5 +1,6 @@
 ﻿using K4os.Compression.LZ4;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Serum_dynamizer
 {
@@ -32,7 +33,7 @@ namespace Serum_dynamizer
                     frm.tLog.AppendText(Environment.NewLine + "Writing " + Path.GetFileName(filepath) + Environment.NewLine);
                     // ---------------------- Header -------------------
                     // 64 char: name of the Serum
-                    BinaryExtensions.WriteArray(writer, nS.name);
+                    BinaryExtensions.WriteArray(writer, Encoding.ASCII.GetBytes(nS.name));
                     ushort version = (ushort)(nS.LengthHeader / sizeof(uint));
                     // 1 ushort: version of the Serum (former length of header / 4)
                     writer.Write(version);
@@ -100,43 +101,43 @@ namespace Serum_dynamizer
                         framepositions[i] = writer.BaseStream.Position - initialframeposition;
                         byte[] framedata = Array.Empty<byte>();
                         // fWidth * fHeight ushort : colorized frame
-                        BinaryExtensions.AppendArrayToBuffer(framedata, nS.cFrames, i, nS.fWidth * nS.fHeight);
+                        framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.cFrames, i, nS.fWidth * nS.fHeight);
                         // if this frame has an extra frame, fWidthX * fHeightX ushort : colorized extra frame
-                        if (nS.isExtraFrame[i] > 0) BinaryExtensions.AppendArrayToBuffer(framedata, nS.cFramesX, i, nS.fWidthX * nS.fHeightX);
+                        if (nS.isExtraFrame[i] > 0) framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.cFramesX, i, nS.fWidthX * nS.fHeightX);
                         // fwidth * fheight bytes : dynamic colorization masks (can't be bit compressed as this contains values)
-                        BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaMasks, i, nS.fWidth * nS.fHeight);
+                        framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaMasks, i, nS.fWidth * nS.fHeight);
                         // MAX_DYNA_SETS_PER_FRAMEN * noColors ushort : dynamic color sets
-                        BinaryExtensions.AppendArrayToBuffer(framedata, nS.Dyna4Cols, i, MAX_DYNA_SETS_PER_FRAMEN * nS.noColors);
+                        framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.Dyna4Cols, i, MAX_DYNA_SETS_PER_FRAMEN * nS.noColors);
                         if (version >= 15)
                         {
                             // if version >= 15, DynaShadows are implemented :
                             //      MAX_DYNA_SETS_PER_FRAMEN bytes : flag for dynamic shadow directions
                             //      0b1 - left, 0b10 - top left, 0b100 - top, 0b1000 - top right, 0b10000 - right, 0b100000 - bottom right, 0b1000000 - bottom, 0b10000000 - bottom left
-                            BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaShadowsDirO, i, MAX_DYNA_SETS_PER_FRAMEN);
+                            framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaShadowsDirO, i, MAX_DYNA_SETS_PER_FRAMEN);
                             //      MAX_DYNA_SETS_PER_FRAMEN ushort : colors of the dynamic shadows
-                            BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaShadowsColO, i, MAX_DYNA_SETS_PER_FRAMEN);
+                            framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaShadowsColO, i, MAX_DYNA_SETS_PER_FRAMEN);
                         }
                         if (nS.isExtraFrame[i] > 0)
                         {
                             // if this frame has an extra frame:
                             //      fWidthX * fHeightX bytes : dynamic colorization masks for extra frames (can't be bit compressed as this contains values)
-                            BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaMasksX, i, nS.fWidthX * nS.fHeightX);
+                            framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaMasksX, i, nS.fWidthX * nS.fHeightX);
                             //      MAX_DYNA_SETS_PER_FRAMEN * noColors ushorts : dynamic color sets for extra frames
-                            BinaryExtensions.AppendArrayToBuffer(framedata, nS.Dyna4ColsX, i, MAX_DYNA_SETS_PER_FRAMEN * nS.noColors);
+                            framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.Dyna4ColsX, i, MAX_DYNA_SETS_PER_FRAMEN * nS.noColors);
                             if (version >= 15)
                             {
                                 // if version >= 15, DynaShadows are implemented :
                                 //      MAX_DYNA_SETS_PER_FRAMEN bytes : flag for dynamic shadow directions
                                 //      0b1 - left, 0b10 - top left, 0b100 - top, 0b1000 - top right, 0b10000 - right, 0b100000 - bottom right, 0b1000000 - bottom, 0b10000000 - bottom left
-                                BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaShadowsDirX, i, MAX_DYNA_SETS_PER_FRAMEN);
+                                framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaShadowsDirX, i, MAX_DYNA_SETS_PER_FRAMEN);
                                 //      MAX_DYNA_SETS_PER_FRAMEN ushort : colors of the dynamic shadows
-                                BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaShadowsColX, i, MAX_DYNA_SETS_PER_FRAMEN);
+                                framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaShadowsColX, i, MAX_DYNA_SETS_PER_FRAMEN);
                             }
                         }
                         // MAX_SPRITES_PER_FRAME bytes : sprites to be detected
-                        BinaryExtensions.AppendArrayToBuffer(framedata, nS.FrameSprites, i, MAX_SPRITES_PER_FRAME);
+                        framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.FrameSprites, i, MAX_SPRITES_PER_FRAME);
                         // 4 * MAX_SPRITES_PER_FRAME ushort : bounding boxes for each sprite given above [minx,miny,maxx,maxy]
-                        BinaryExtensions.AppendArrayToBuffer(framedata, nS.FrameSpriteBB, i, MAX_SPRITES_PER_FRAME * 4);
+                        framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.FrameSpriteBB, i, MAX_SPRITES_PER_FRAME * 4);
                         // Compressed data for colorizations:
                         // for up to 4 rotations:
                         // - 1 ushort : length of the rotation in number of colors (ncR)
@@ -144,26 +145,26 @@ namespace Serum_dynamizer
                         // - ncR ushorts : colors of the rotation
                         // then again for next rotation...
                         // final "0" (only if there are less than MAX_COLOR_ROTATIONN rotations)
-                        BinaryExtensions.AppendArrayToBuffer(framedata, PackColorisations(nS.ColorRotations, i));
+                        framedata = BinaryExtensions.AppendArrayToBuffer(framedata, PackColorisations(nS.ColorRotations, i));
                         // same as above for extra frame, if available:
-                        if (nS.isExtraFrame[i] > 0) BinaryExtensions.AppendArrayToBuffer(framedata, PackColorisations(nS.ColorRotationsX, i));
+                        if (nS.isExtraFrame[i] > 0) framedata = BinaryExtensions.AppendArrayToBuffer(framedata, PackColorisations(nS.ColorRotationsX, i));
                         // 1 ushort : Pup Pack trigger ID
-                        BinaryExtensions.AppendValToBuffer(framedata, (ushort)nS.TriggerID[i]);
+                        framedata = BinaryExtensions.AppendValToBuffer(framedata, (ushort)nS.TriggerID[i]);
                         // 1 ushort : Background ID (0xFFFF if no background)
-                        BinaryExtensions.AppendValToBuffer(framedata, nS.BackgroundID[i]);
+                        framedata = BinaryExtensions.AppendValToBuffer(framedata, nS.BackgroundID[i]);
                         if (nS.BackgroundID[i] != 0xFFFF)
                         {
                             // if there is a background:
                             //      fWidth * fHeight / 8 : Mask for the application of the background (bit-compressed)
                             byte[] mask = new byte[nS.fWidth * nS.fHeight];
                             Array.Copy(nS.BackgroundMask, (int)(i * nS.fWidth * nS.fHeight), mask, 0, (int)(nS.fWidth * nS.fHeight));
-                            BinaryExtensions.AppendArrayToBuffer(framedata, ConvertByteToBit(mask));
+                            framedata = BinaryExtensions.AppendArrayToBuffer(framedata, ConvertByteToBit(mask));
                             //      if there is an extra frame, fWidthX * fHeightX / 8 : Mask for the application of the background (bit-compressed)
                             if (nS.isExtraFrame[i] > 0)
                             {
                                 mask = new byte[nS.fWidthX * nS.fHeightX];
                                 Array.Copy(nS.BackgroundMaskX, (int)(i * nS.fWidthX * nS.fHeightX), mask, 0, (int)(nS.fWidthX * nS.fHeightX));
-                                BinaryExtensions.AppendArrayToBuffer(framedata, ConvertByteToBit(mask));
+                                framedata = BinaryExtensions.AppendArrayToBuffer(framedata, ConvertByteToBit(mask));
                             }
                         }
                         // compress each frame using fast lz4
@@ -188,21 +189,21 @@ namespace Serum_dynamizer
                     {
                         framepositions[i] = writer.BaseStream.Position - initialframeposition;
                         byte[] framedata = Array.Empty<byte>();
-                        BinaryExtensions.AppendArrayToBuffer(framedata, nS.SpriteColored, i, MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+                        framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.SpriteColored, i, MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
                         if (nS.isExtraSprite[i] > 0)
                         {
-                            BinaryExtensions.AppendArrayToBuffer(framedata, nS.SpriteMaskX, i, MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
-                            BinaryExtensions.AppendArrayToBuffer(framedata, nS.SpriteColoredX, i, MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+                            framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.SpriteMaskX, i, MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+                            framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.SpriteColoredX, i, MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
                         }
                         if (version >= 18)
                         {
                             // if version >= 18, dynamic colored sprites are implemented
-                            BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaSpriteMasks, i, MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
-                            BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaSprite4Cols, i, MAX_DYNA_SETS_PER_SPRITE * nS.noColors);
+                            framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaSpriteMasks, i, MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+                            framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaSprite4Cols, i, MAX_DYNA_SETS_PER_SPRITE * nS.noColors);
                             if (nS.isExtraSprite[i] > 0)
                             {
-                                BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaSpriteMasksX, i, MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
-                                BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaSprite4ColsX, i, MAX_DYNA_SETS_PER_SPRITE * nS.noColors);
+                                framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaSpriteMasksX, i, MAX_SPRITE_WIDTH * MAX_SPRITE_HEIGHT);
+                                framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.DynaSprite4ColsX, i, MAX_DYNA_SETS_PER_SPRITE * nS.noColors);
                             }
                         }
                         // compress each sprite using fast lz4
@@ -227,9 +228,9 @@ namespace Serum_dynamizer
                         framepositions[i] = writer.BaseStream.Position - initialframeposition;
                         byte[] framedata = Array.Empty<byte>();
                         // fWidth * fHeight ushort : colorized background
-                        BinaryExtensions.AppendArrayToBuffer(framedata, nS.BackgroundFrames, i, nS.fWidth * nS.fHeight);
+                        framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.BackgroundFrames, i, nS.fWidth * nS.fHeight);
                         // if this background has an extra background, fWidthX * fHeightX ushort : colorized extra background
-                        if (nS.isExtraBackground[i] > 0) BinaryExtensions.AppendArrayToBuffer(framedata, nS.BackgroundFramesX, i, nS.fWidthX * nS.fHeightX);
+                        if (nS.isExtraBackground[i] > 0) framedata = BinaryExtensions.AppendArrayToBuffer(framedata, nS.BackgroundFramesX, i, nS.fWidthX * nS.fHeightX);
                         // compress each background using fast lz4
                         (int compsize, byte[] compbuf) = Lz4_Compress(framedata);
                         // 1 int : in the file, we store the size of the original uncompressed data of the background

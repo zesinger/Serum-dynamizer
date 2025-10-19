@@ -45,7 +45,7 @@ namespace Serum_dynamizer
             Buffer.BlockCopy(existingBuffer, 0, newBuffer, 0, existingLength);
 
             // Append new array
-            Buffer.BlockCopy(values, (int)(index * size), newBuffer, existingLength, bytesToWrite);
+            Buffer.BlockCopy(values, (int)(index * size * Marshal.SizeOf<T>()), newBuffer, existingLength, bytesToWrite);
 
             return newBuffer;
         }
